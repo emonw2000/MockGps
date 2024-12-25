@@ -99,6 +99,45 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun MapScreenWithMapTypeSelector(activity: MainActivity) {
+    var mapType by remember { mutableStateOf(GoogleMap.MAP_TYPE_NORMAL) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        MapTypeSelector(mapType = mapType, onMapTypeChange = { mapType = it })
+        MapScreen(activity = activity, mapType = mapType)
+    }
+}
+
+@Composable
+fun MapTypeSelector(mapType: Int, onMapTypeChange: (Int) -> Unit) {
+    val mapTypes = listOf(
+        "Normal" to GoogleMap.MAP_TYPE_NORMAL,
+        "Satellite" to GoogleMap.MAP_TYPE_SATELLITE,
+        "Hybrid" to GoogleMap.MAP_TYPE_HYBRID
+    )
+
+    var expanded by remember { mutableStateOf(false) }
+    var selectedMapType by remember { mutableStateOf(mapTypes.first { it.second == mapType }.first) }
+
+    Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Button(onClick = { expanded = true }) {
+            Text(text = "Map Type: $selectedMapType")
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            mapTypes.forEach { (label, type) ->
+                DropdownMenuItem(onClick = {
+                    selectedMapType = label
+                    onMapTypeChange(type)
+                    expanded = false
+                }) {
+                    Text(text = label)
+                }
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
