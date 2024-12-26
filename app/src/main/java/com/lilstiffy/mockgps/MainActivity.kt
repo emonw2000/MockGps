@@ -9,17 +9,19 @@ import android.os.IBinder
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.LatLng
 import com.lilstiffy.mockgps.service.LocationHelper
 import com.lilstiffy.mockgps.service.MockLocationService
 import com.lilstiffy.mockgps.service.VibratorService
-import com.lilstiffy.mockgps.ui.screens.MapScreen
 import com.lilstiffy.mockgps.ui.theme.MockGpsTheme
 
 class MainActivity : ComponentActivity() {
@@ -69,13 +71,11 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MockGpsTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
-                    modifier = Modifier
-                        .fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MapScreen(activity = this)
+                    MapScreenWithMapTypeSelector(activity = this)
                 }
             }
         }
@@ -110,6 +110,23 @@ fun MapScreenWithMapTypeSelector(activity: MainActivity) {
 }
 
 @Composable
+fun MapScreen(activity: MainActivity, mapType: Int) {
+    AndroidView(factory = { context ->
+        val mapView = MapView(context)
+        mapView.onCreate(null)
+        mapView.getMapAsync { googleMap ->
+            googleMap.mapType = mapType
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(-6.2, 106.8), 10f)) // Jakarta
+        }
+        mapView
+    }, update = { mapView ->
+        mapView.getMapAsync { googleMap ->
+            googleMap.mapType = mapType
+        }
+    })
+}
+
+@Composable
 fun MapTypeSelector(mapType: Int, onMapTypeChange: (Int) -> Unit) {
     val mapTypes = listOf(
         "Normal" to GoogleMap.MAP_TYPE_NORMAL,
@@ -118,7 +135,7 @@ fun MapTypeSelector(mapType: Int, onMapTypeChange: (Int) -> Unit) {
     )
 
     var expanded by remember { mutableStateOf(false) }
-    var selectedMapType by remember { mutableStateOf(mapTypes.first { it.second == mapType }.first) }
+    val selectedMapType = mapTypes.firstOrNull { it.second == mapType }?.first ?: "Normal"
 
     Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Button(onClick = { expanded = true }) {
@@ -127,7 +144,6 @@ fun MapTypeSelector(mapType: Int, onMapTypeChange: (Int) -> Unit) {
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             mapTypes.forEach { (label, type) ->
                 DropdownMenuItem(onClick = {
-                    selectedMapType = label
                     onMapTypeChange(type)
                     expanded = false
                 }) {
@@ -141,6 +157,5 @@ fun MapTypeSelector(mapType: Int, onMapTypeChange: (Int) -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    MockGpsTheme {
-    }
+    MockGpsTheme {}
 }
